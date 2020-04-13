@@ -7,11 +7,11 @@ to deploy a mail: *contact@<your_domain.com>*
 
 **In your DNS record set:**
 ```peprl
-mail.<your_domain.com> A <server_ip>
-<your_domain.com> MX mail.<your_domain.com>
-imap.<your_domain.com> CNAME mail.<your_domain.com>
-pop.<your_domain.com> CNAME mail.<your_domain.com>
-smtp.<your_domain.com> CNAME mail.<your_domain.com>
+mail.<your_domain.com>  A      <server_ip>
+<your_domain.com>       MX     mail.<your_domain.com>
+imap.<your_domain.com>  CNAME  mail.<your_domain.com>
+pop.<your_domain.com>   CNAME  mail.<your_domain.com>
+smtp.<your_domain.com>  CNAME  mail.<your_domain.com>
 ```
 
 **On your server:**
