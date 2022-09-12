@@ -1,22 +1,65 @@
 version: "3"
 
+networks:
+    proxy:
+      driver: bridge
+
 services:
-  posteio:
-    image: analogic/poste.io
-    ports:
-      - 0.0.0.0:25:25       
-      - 80:80
-      - 110:110
-      - 143:143
-      - 443:443
-      - 465:465
-      - 587:587
-      - 993:993
-      - 995:995
-      - 4190:4190
-    volumes:
-      - ./posteio:/data     
-    hostname: mail
-    domainname: smartdom.ch 
-    environment:
-      - TZ=Europe/Prague
+    nginx:
+        image: jwilder/nginx-proxy:alpine
+        container_name: nginx
+        restart: always
+        labels:
+            com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: 'true'
+        ports:
+            - 80:80
+            - 443:443
+        volumes:
+            - ./Proxy/logs/global:/var/log/nginx
+            - ./Proxy/passwd:/etc/nginx/htpasswd
+            - ./Proxy/data/html:/usr/share/nginx/html
+            - ./Proxy/data/certs:/etc/nginx/certs:ro
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+        networks:
+            - proxy
+
+    letsencrypt:
+        image: jrcs/letsencrypt-nginx-proxy-companion
+        container_name: letsencrypt
+        volumes:
+            - ./Proxy/vhost:/etc/nginx/vhost.d
+            - ./Proxy/data/html:/usr/share/nginx/html
+            - ./Proxy/data/certs:/etc/nginx/certs:rw
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        depends_on:
+            - nginx
+        networks:
+            - proxy
+
+    posteio:
+        image: analogic/poste.io
+        ports:
+            - 0.0.0.0:25:25
+            - 110:110
+            - 143:143
+            - 465:465
+            - 587:587
+            - 993:993
+            - 995:995
+        expose:
+            - 80
+        volumes:
+            - ../Smartdom/Micro/posteio:/data
+        hostname: mail
+        domainname: eliotctl.fr
+        environment:
+            TZ: Europe/Prague
+            HTTPS: 'OFF'
+            VIRTUAL_HOST: mail.${DOMAIN}
+            VIRTUAL_PORT: 80
+            LETSENCRYPT_HOST: mail.${DOMAIN}
+            LETSENCRYPT_EMAIL: ${EMAIL}
+            DISABLE_CLAMAV: 'true'
+            DISABLE_RSPAMD: 'true'
+        networks:
+            - proxy
